@@ -1,5 +1,5 @@
 {
-    "name":        "winzou/state-machine",
+    "name":        "james.rus52/state-machine",
     "description": "A very lightweight yet powerful PHP state machine",
     "keywords":    ["statemachine", "state", "event", "callback"],
     "homepage":    "https://github.com/winzou/StateMachine",
