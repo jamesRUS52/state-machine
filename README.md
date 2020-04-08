@@ -12,7 +12,7 @@ Installation (via composer)
 ```js
 {
     "require": {
-        "james.rus52/state-machine": "~0.4"
+        "james.rus52/state-machine": "~0.5"
     }
 }
 ```
@@ -27,58 +27,320 @@ In order to use the state machine, you first need to define a graph. A graph is 
 Let's define a graph called *myGraphA* for our `DomainObject` object:
 
 ```php
-$config = array(
-    'graph'         => 'myGraphA', // Name of the current graph - there can be many of them attached to the same object
-    'property_path' => 'stateA',  // Property path of the object actually holding the state
-    'states'        => array(
-        'checkout',
-        'pending',
-        'confirmed',
-        'cancelled'
-    ),
-    'transitions' => array(
-        'create' => array(
-            'from' => array('checkout'),
-            'to'   => 'pending'
-        ),
-        'confirm' => array(
-            'from' => array('checkout', 'pending'),
-            'to'   => 'confirmed'
-        ),
-        'cancel' => array(
-            'from' => array('confirmed'),
-            'to'   => 'cancelled'
-        )
-    ),
-    'callbacks' => array(
-        'guard' => array(
-            'guard-cancel' => array(
-                'to' => array('cancelled'), // Will be called only for transitions going to this state
-                'do' => function() { var_dump('guarding to cancelled state'); return false; }
-            )
-        ),
-        'before' => array(
-            'from-checkout' => array(
-                'from' => array('checkout'), // Will be called only for transitions coming from this state
-                'do'   => function() { var_dump('from checkout transition'); }
-            )
-        ),
-        'after' => array(
-            'on-confirm' => array(
-                'on' => array('confirm'), // Will be called only on this transition
-                'do' => function() { var_dump('on confirm transition'); }
-            ),
-            'to-cancelled' => array(
-                'to' => array('cancelled'), // Will be called only for transitions going to this state
-                'do' => function() { var_dump('to cancel transition'); }
-            ),
-            'cancel-date' => array(
-                'to' => array('cancelled'),
-                'do' => array('object', 'setCancelled'),
-            ),
-        )
-    )
-);
+$config = [
+                  'graph'  => 'Request',
+                  'property_path' => 'Status',
+                  'states' => [
+                      RequestStatus::NEW    => [
+                          'actions' => [
+                              RequestAction::COMMENT,
+                              RequestAction::CLONE,
+                              RequestAction::DELETE
+                          ],
+                          'properties' => [
+                              RequestAction::COMMENT => ['b_name' => 's_comment' ],
+                              RequestAction::CLONE => ['b_name' => 's_clone_request' ],
+                              RequestAction::DELETE => ['b_name' => 's_delete_request' ,'roles' => ['author'], 'onclick' => 'ConfirmDeleteRequest();' ]
+                          ]
+                      ],
+                      RequestStatus::ANALYZE    => [
+                          'actions' => [
+                              RequestAction::COMMENT,
+                              RequestAction::CLONE,
+                              RequestAction::ESCALATE,
+                              RequestAction::DELETE,
+                              RequestAction::SUSPEND,
+                              RequestAction::UNSUSPEND,
+                              ],
+                          'properties' => [
+                              RequestAction::COMMENT => ['b_name' => 's_comment' ],
+                              RequestAction::CLONE => ['b_name' => 's_clone_request' ],
+                              RequestAction::ESCALATE => ['b_name' => 's_escalation', 'onclick' => 'ShowModalWindow(\'owner_model_window\',\'SubmitForm\',\'owner_model_window_form\');' ],
+                              RequestAction::DELETE => ['b_name' => 's_delete_request' ,'roles' => ['superadmin'], 'onclick' => 'ConfirmDeleteRequest();' ],
+                              RequestAction::SUSPEND => ['b_name' => 's_suspend' ],
+                              RequestAction::UNSUSPEND => ['b_name' => 's_unsuspend'],
+                          ],
+                          'conditions' => [
+                              RequestAction::SUSPEND => ['object', 'isSuspended', false ],
+                              RequestAction::UNSUSPEND => ['object', 'isSuspended', true ],
+                          ]
+                      ],
+                      RequestStatus::APPROVE    => [
+                          'actions' => [
+                              RequestAction::COMMENT,
+                              RequestAction::CLONE,
+                              RequestAction::ESCALATE,
+                              RequestAction::DELETE,
+                              RequestAction::SUSPEND,
+                              RequestAction::UNSUSPEND,
+                              ],
+                          'properties' => [
+                              RequestAction::COMMENT => ['b_name' => 's_comment' ],
+                              RequestAction::CLONE => ['b_name' => 's_clone_request' ],
+                              RequestAction::ESCALATE => ['b_name' => 's_escalation', 'onclick' => 'ShowModalWindow(\'owner_model_window\',\'SubmitForm\',\'owner_model_window_form\');' ],
+                              RequestAction::DELETE => ['b_name' => 's_delete_request' ,'roles' => ['superadmin'], 'onclick' => 'ConfirmDeleteRequest();' ],
+                              RequestAction::SUSPEND => ['b_name' => 's_suspend' ],
+                              RequestAction::UNSUSPEND => ['b_name' => 's_unsuspend'],
+                          ],
+                          'conditions' => [
+                              RequestAction::SUSPEND => ['object', 'isSuspended', false ],
+                              RequestAction::UNSUSPEND => ['object', 'isSuspended', true ],
+                          ]
+                      ],
+                      RequestStatus::APPROVED    => [
+                          'actions' => [
+                              RequestAction::COMMENT,
+                              RequestAction::CLONE,
+                              RequestAction::ESCALATE,
+                              RequestAction::DELETE,
+                              RequestAction::SUSPEND,
+                              RequestAction::UNSUSPEND,
+                              ],
+                          'properties' => [
+                              RequestAction::COMMENT => ['b_name' => 's_comment' ],
+                              RequestAction::CLONE => ['b_name' => 's_clone_request' ],
+                              RequestAction::ESCALATE => ['b_name' => 's_escalation', 'onclick' => 'ShowModalWindow(\'owner_model_window\',\'SubmitForm\',\'owner_model_window_form\');' ],
+                              RequestAction::DELETE => ['b_name' => 's_delete_request' ,'roles' => ['superadmin'], 'onclick' => 'ConfirmDeleteRequest();' ],
+                              RequestAction::SUSPEND => ['b_name' => 's_suspend' ],
+                              RequestAction::UNSUSPEND => ['b_name' => 's_unsuspend'],
+                          ],
+                          'conditions' => [
+                              RequestAction::SUSPEND => ['object', 'isSuspended', false ],
+                              RequestAction::UNSUSPEND => ['object', 'isSuspended', true ],
+                          ]
+                      ],
+                      RequestStatus::SENT    => [
+                          'actions' => [
+                              RequestAction::COMMENT,
+                              RequestAction::CLONE],
+                          'properties' => [
+                              RequestAction::COMMENT => ['b_name' => 's_comment' ],
+                              RequestAction::CLONE => ['b_name' => 's_clone_request' ]
+                          ]
+                      ],
+                      RequestStatus::DELIVERED    => [
+                          'actions' => [
+                              RequestAction::COMMENT,
+                              RequestAction::CLONE,
+                              RequestAction::ESCALATE,
+                              RequestAction::SUSPEND,
+                              RequestAction::UNSUSPEND,
+                          ],
+                          'properties' => [
+                              RequestAction::COMMENT => ['b_name' => 's_comment' ],
+                              RequestAction::CLONE => ['b_name' => 's_clone_request' ],
+                              RequestAction::ESCALATE => ['b_name' => 's_escalation', 'onclick' => 'ShowModalWindow(\'owner_model_window\',\'SubmitForm\',\'owner_model_window_form\');' ],
+                              RequestAction::SUSPEND => ['b_name' => 's_suspend' ],
+                              RequestAction::UNSUSPEND => ['b_name' => 's_unsuspend'],
+                          ],
+                          'conditions' => [
+                              RequestAction::SUSPEND => ['object', 'isSuspended', false ],
+                              RequestAction::UNSUSPEND => ['object', 'isSuspended', true ],
+                          ]
+                      ],
+                      RequestStatus::COMPLETED    => [
+                          'actions' => [
+                              RequestAction::COMMENT,
+                              RequestAction::CLONE],
+                          'properties' => [
+                              RequestAction::COMMENT => ['b_name' => 's_comment' ],
+                              RequestAction::CLONE => ['b_name' => 's_clone_request' ]
+                          ]
+                      ],
+                      RequestStatus::CANCELED    => [
+                          'actions' => [
+                              RequestAction::COMMENT,
+                              RequestAction::CLONE],
+                          'properties' => [
+                              RequestAction::COMMENT => ['b_name' => 's_comment' ],
+                              RequestAction::CLONE => ['b_name' => 's_clone_request' ]
+                          ]
+                      ],
+                      RequestStatus::REJECTED    => [
+                          'actions' => [
+                              RequestAction::COMMENT,
+                              RequestAction::CLONE],
+                          'properties' => [
+                              RequestAction::COMMENT => ['b_name' => 's_comment' ],
+                              RequestAction::CLONE => ['b_name' => 's_clone_request' ]
+                          ]
+                      ],
+                  ],
+                  'transitions' => [
+                      RequestTransition::CANCEL  => [
+                          'from' => [RequestStatus::NEW],
+                          'to' => RequestStatus::CANCELED,
+                          'properties' => ['b_name' => 's_to_cancel', 'css_class' => 'btn-outline-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::TO_ANALYZE => [
+                          'from' => [RequestStatus::NEW],
+                          'to' => RequestStatus::ANALYZE,
+                          'properties' => ['b_name' => 's_to_analyze', 'css_class' => 'btn-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::REJECT  => [
+                          'from' => [RequestStatus::ANALYZE],
+                          'to' => RequestStatus::REJECTED,
+                          'properties' => ['b_name' => 's_to_reject_admin', 'css_class' => 'btn-outline-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::BACK_TO_AUTHOR  => [
+                          'from' => [RequestStatus::ANALYZE],
+                          'to' => RequestStatus::NEW,
+                          'properties' => ['b_name' => 's_return_to_author', 'css_class' => 'btn-outline-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::ANALYZE  => [
+                          'from' => [RequestStatus::ANALYZE],
+                          'to' => RequestStatus::APPROVE,
+                          'properties' => ['b_name' => 's_aprove_my_resources', 'css_class' => 'btn-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::RETURN  => [
+                          'from' => [RequestStatus::APPROVE],
+                          'to' => RequestStatus::ANALYZE,
+                          'properties' => ['b_name' => 's_to_returnanalyze', 'css_class' => 'btn-outline-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::REJECT  => [
+                          'from' => [RequestStatus::APPROVE, RequestStatus::ANALYZE ],
+                          'to' => RequestStatus::REJECTED,
+                          'properties' => ['b_name' => 's_to_reject', 'css_class' => 'btn-outline-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::APPROVE  => [
+                          'from' => [RequestStatus::APPROVE],
+                          'to' => RequestStatus::APPROVED,
+                          'properties' => ['b_name' => 's_to_approve', 'css_class' => 'btn-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::SEND  => [
+                          'from' => [RequestStatus::APPROVED],
+                          'to' => RequestStatus::SENT,
+                          'properties' => ['b_name' => 's_to_partner', 'css_class' => 'btn-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::DELIVER  => [
+                          'from' => [RequestStatus::SENT],
+                          'to' => RequestStatus::DELIVERED,
+                          'properties' => ['roles' => ['system']]],
+                      RequestTransition::RESEND => [
+                          'from' => [RequestStatus::DELIVERED],
+                          'to' => RequestStatus::SENT,
+                          'properties' => ['b_name' => 's_resend', 'css_class' => 'btn-primary', 'roles' => ['executor','superadmin']]
+                      ],
+                      RequestTransition::COMPLETE  => [
+                          'from' => [RequestStatus::DELIVERED],
+                          'to' => RequestStatus::COMPLETED, 'properties' => ['roles' => ['system']]
+                      ],
+                      RequestTransition::REOPEN => [
+                          'from' => [RequestStatus::COMPLETED, RequestStatus::REJECTED, RequestStatus::CANCELED],
+                          'to' => RequestStatus::SENT,
+                          'properties' => ['b_name' => 's_reopen', 'css_class' => 'btn-primary', 'roles' => ['author', 'executor','superadmin']]
+                      ],
+                  ],
+                  'callbacks' => [
+                      'lock' => [
+                          [
+                              'do'   => ['object','getLock'],
+                          ],
+                      ],
+                      'unlock' => [
+                          [
+                              'do'   => ['object','releaseLock'],
+                          ],
+                      ],
+                      'before' => [
+                          [
+                              'on' => RequestTransition::BACK_TO_AUTHOR,
+                              'do'   => ['object','BackToAuthor'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::CANCEL,
+                              'do'   => ['object','Cancel'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::TO_ANALYZE,
+                              'do'   => ['object','ToAnalyze'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::ANALYZE,
+                              'do'   => ['object','ToApprove'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::RETURN,
+                              'do'   => ['object','BackToAnalyze'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::REJECT,
+                              'from' => RequestStatus::ANALYZE,
+                              'do'   => ['object','ToRejectByAdmin'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::REJECT,
+                              'from' => RequestStatus::APPROVE,
+                              'do'   => ['object','ToReject'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::APPROVE,
+                              'do'   => ['object','ToComplete'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::SEND,
+                              'do'   => ['object','ToSendPartner'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::RESEND,
+                              'do'   => ['object','ToSendPartner'],
+                              'args' => [$this->params]
+                          ],
+                          [
+                              'on' => RequestTransition::REOPEN,
+                              'do'   => ['object','Reopen'],
+                              'args' => [$this->params]
+                          ],
+                      ],
+                      'action' => [
+                          [
+                              'action' => RequestAction::COMMENT,
+                              'do'   => ['object','AddComment'],
+                              'args' => [$this->params['ta_comment'] ?? null]
+                          ],
+                          [
+                              'action' => RequestAction::CLONE,
+                              'do'   => ['object','CloneRequest'],
+                          ],
+                          [
+                              'action' => RequestAction::ESCALATE,
+                              'on' => [RequestStatus::ANALYZE, RequestStatus::APPROVE, RequestStatus::APPROVED, RequestStatus::DELIVERED],
+                              'do'   => ['object','Escalate'],
+                              'args' => [$this->params['s_escalation_owner'] ?? null]
+                          ],
+                          [
+                              'action' => RequestAction::DELETE,
+                              'on' => [RequestStatus::NEW, RequestStatus::ANALYZE, RequestStatus::APPROVE, RequestStatus::APPROVED],
+                              'do'   => ['object','DeleteRequest'],
+                          ],
+                          [
+                              'action' => RequestAction::SUSPEND,
+                              'do'   => ['object','Suspend'],
+                              'args' => [$this->params['ta_comment'] ?? null]
+                          ],
+                          [
+                              'action' => RequestAction::UNSUSPEND,
+                              'do'   => ['object','Unsuspend'],
+                              'args' => [$this->params['ta_comment'] ?? null]
+                          ],
+                      ],
+                      'guard' => [
+                          [
+                              'on' => RequestTransition::RESEND,
+                              'do' =>  ['object','hasResourcesError'],
+                          ]
+                      ]
+                  ]
+              ];
 ```
 
 So, in the previous example, the graph has 6 possible states, and those can be achieved by applying some transitions to the object. For example, when creating a new `DomainObject`, you would apply the 'create' transition to the object, and after that the state of it would become *pending*.
@@ -105,3 +367,18 @@ Guarding callbacks must return a `bool`. If a guard returns `false`, a transitio
 ##### Credits
 
 This library has been highly inspired by [https://github.com/yohang/Finite](https://github.com/yohang/Finite), but has taken another direction.
+
+##### James' version of SM
+Cloned from [https://github.com/sebdesign/state-machine](sebdesign/state-machine)
+
+I've added some new futures
+1. Properties - user defined info, that you can use via
+ 
+-  getTransitionProperties
+-  getStateProperties
+-  hasTransitionProperties
+-  hasStateProperties
+  
+2. lock/unlock - You may implement locking your object, while someone do transition on document that you try to Transit too
+3. Action - State can has some actions that don't doing transition and locking document too.
+4. Conditions - This is a condition for state action, like Guard for transitions
